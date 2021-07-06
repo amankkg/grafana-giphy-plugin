@@ -36,6 +36,8 @@ Grafana supports a wide range of data sources, including Prometheus, MySQL, and 
 
 ## Run the plugin using Grafana + Docker
 
+1. Install dependencies and build a plugin
+
 1. Run Grafana docker image with path set to parent directory of this repository
 
    ```bash
@@ -46,9 +48,11 @@ Grafana supports a wide range of data sources, including Prometheus, MySQL, and 
 
 1. Sign in (default user is `admin` and its password is `admin`)
 
+1. Go to `Configuration -> Data Sources` and add `grafana-giphy-plugin` data source
+
 1. Create a new dashboard, or edit an existing one
 
-1. Add a data source plugin to that dashboard
+1. Add a plugin to visualize newly added data source
 
 ## Learn more
 

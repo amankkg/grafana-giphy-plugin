@@ -24,13 +24,25 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
     // Return a constant for each query.
     const data = options.targets.map(target => {
       const query = defaults(target, defaultQuery);
-      return new MutableDataFrame({
+
+      const frame = new MutableDataFrame({
         refId: query.refId,
         fields: [
-          { name: 'Time', values: [from, to], type: FieldType.time },
-          { name: 'Value', values: [query.constant, query.constant], type: FieldType.number },
+          { name: 'time', type: FieldType.time },
+          { name: 'value', type: FieldType.number },
         ],
       });
+
+      // Duration of the time (ms) range
+      const duration = to - from;
+      // Step determines how close in time (ms) the points will be to each other
+      const step = duration / 1000;
+
+      for (let t = 0; t < duration; t += step) {
+        frame.add({ time: from + t, value: Math.sin((2 * Math.PI * t) / duration) });
+      }
+
+      return frame;
     });
 
     return { data };
