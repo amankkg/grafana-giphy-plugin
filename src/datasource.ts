@@ -1,5 +1,3 @@
-import defaults from 'lodash/defaults';
-
 import {
   DataQueryRequest,
   DataQueryResponse,
@@ -8,8 +6,9 @@ import {
   MutableDataFrame,
   FieldType,
 } from '@grafana/data';
+import { getBackendSrv } from '@grafana/runtime';
 
-import { MyQuery, MyDataSourceOptions, defaultQuery } from './types';
+import { MyQuery, MyDataSourceOptions } from './types';
 
 export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
   resolution: number;
@@ -21,13 +20,8 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
   }
 
   async query(options: DataQueryRequest<MyQuery>): Promise<DataQueryResponse> {
-    const { range } = options;
-    const from = range!.from.valueOf();
-    const to = range!.to.valueOf();
-
-    // Return a constant for each query.
-    const data = options.targets.map(target => {
-      const query = defaults(target, defaultQuery);
+    const requests = options.targets.map(async (query) => {
+      const response = await this.doRequest(query);
 
       const frame = new MutableDataFrame({
         refId: query.refId,
@@ -37,17 +31,12 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
         ],
       });
 
-      // Duration of the time (ms) range
-      const duration = to - from;
-      // Step determines how close in time (ms) the points will be to each other
-      const step = duration / this.resolution;
-
-      for (let t = 0; t < duration; t += step) {
-        frame.add({ time: from + t, value: Math.sin((2 * Math.PI * query.frequency * t) / duration) });
-      }
+      response.data.forEach((point: { time: string; value: number }) => frame.appendRow([point.time, point.value]));
 
       return frame;
     });
+
+    const data = await Promise.all(requests);
 
     return { data };
   }
@@ -59,4 +48,34 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       message: 'Success',
     };
   }
+
+  async doRequest(query: MyQuery) {
+    // TODO: update deprecated API usage
+    const response = await getBackendSrv().datasourceRequest({
+      method: 'GET',
+      url: 'https://api.giphy.com/v1/gifs/search',
+      params: { search: 'test', api_key: API_KEY, limit: 5 },
+    });
+
+    const { data } = await response.json();
+
+    const result = data.map((gif: GiphyObject) => ({
+      time: gif.import_datetime,
+      value: parseInt(gif.images.original.size),
+    }));
+
+    return result;
+  }
+}
+
+// TODO: refactor this out
+const API_KEY = 'zCBX9zG85N4BqyOh828dugjjGfNFxDtc';
+
+interface GiphyObject {
+  import_datetime: string;
+  images: {
+    original: {
+      size: string;
+    };
+  };
 }

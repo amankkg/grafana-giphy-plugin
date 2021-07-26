@@ -50,7 +50,7 @@ Grafana supports a wide range of data sources, including Prometheus, MySQL, and 
    docker run -d -p 3000:3000 -v PARENT_DIR_PATH:/var/lib/grafana/plugins --name=grafana grafana/grafana:7.0.0
    ```
 
-1. Visit http://localhost:3000
+1. Visit Grafana at http://localhost:3000
 
 1. Sign in (default user is `admin` and its password is `admin`)
 
